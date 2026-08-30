@@ -1,0 +1,104 @@
+{#
+  Fragmento reutilizado en dos lugares:
+    - incluido dentro de index.html en la primera carga de la página
+    - devuelto tal cual por /partials/services (polling) y por los
+      endpoints de start/stop, que HTMX usa para reemplazar #services-root
+
+  Variables esperadas en el contexto: services, error, warnings,
+  last_action, last_action_profile.
+#}
+
+{% if error %}
+<div class="mb-4 rounded-lg border border-red-300 bg-red-50 text-red-800 px-4 py-3">
+    <p class="font-semibold">No se pueden mostrar los servicios</p>
+    <p class="text-sm mt-1">{{ error }}</p>
+</div>
+{% endif %}
+
+{% for warning in warnings %}
+<div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+    {{ warning }}
+</div>
+{% endfor %}
+
+{% if last_action %}
+<div
+    class="mb-4 rounded-lg border px-4 py-3 text-sm
+    {% if last_action.success %}border-emerald-300 bg-emerald-50 text-emerald-800{% else %}border-red-300 bg-red-50 text-red-800{% endif %}"
+>
+    <span class="font-semibold">{{ last_action_profile }}:</span> {{ last_action.message }}
+</div>
+{% endif %}
+
+{% if not error %}
+<div class="grid gap-4 sm:grid-cols-2">
+    {% for service in services %}
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold capitalize text-slate-800">{{ service.name }}</h2>
+
+            {% if service.status == "corriendo" %}
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Corriendo
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-full">
+                <span class="h-2 w-2 rounded-full bg-slate-400"></span> Detenido
+            </span>
+            {% endif %}
+        </div>
+
+        <p class="text-xs text-slate-400 mb-3 font-mono">{{ service.image }}</p>
+
+        <dl class="text-sm text-slate-600 space-y-1 mb-4">
+            <div class="flex justify-between gap-4">
+                <dt>Host</dt><dd class="font-mono">{{ service.host }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+                <dt>Puerto</dt><dd class="font-mono">{{ service.port or "—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+                <dt>Usuario</dt><dd class="font-mono">{{ service.user or "—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+                <dt>Contraseña</dt><dd class="font-mono">{{ service.password or "—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+                <dt>Base de datos</dt><dd class="font-mono">{{ service.database or "—" }}</dd>
+            </div>
+        </dl>
+
+        <div class="flex gap-2">
+            <!--
+                hx-post: al hacer click, HTMX manda un POST a esta URL.
+                hx-target + hx-swap: la respuesta reemplaza el contenido de
+                    #services-root (definido en index.html), igual que hace
+                    el polling automático.
+                hx-disabled-elt="this": deshabilita el propio botón mientras
+                    la petición está en curso, para evitar doble-click.
+            -->
+            <button
+                hx-post="/services/{{ service.profile }}/start"
+                hx-target="#services-root"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this"
+                class="flex-1 rounded-lg bg-emerald-600 text-white text-sm font-medium py-1.5 hover:bg-emerald-700 disabled:opacity-50"
+            >
+                Iniciar
+            </button>
+            <button
+                hx-post="/services/{{ service.profile }}/stop"
+                hx-target="#services-root"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this"
+                class="flex-1 rounded-lg bg-rose-600 text-white text-sm font-medium py-1.5 hover:bg-rose-700 disabled:opacity-50"
+            >
+                Detener
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-slate-500 sm:col-span-2">docker-compose.yml no define ningún servicio todavía.</p>
+    {% endfor %}
+</div>
+{% endif %}

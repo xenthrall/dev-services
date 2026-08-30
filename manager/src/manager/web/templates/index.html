@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dev-services manager</title>
+    <!-- Tailwind vía CDN: no hay build de CSS, solo se activa con este script. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX: nos deja hacer polling y peticiones POST desde atributos HTML,
+         sin escribir JavaScript propio. -->
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <main class="max-w-3xl mx-auto py-10 px-4">
+        <h1 class="text-2xl font-bold text-slate-800 mb-1">dev-services manager</h1>
+        <p class="text-slate-500 mb-6 text-sm">
+            Inicia y detén los servicios Docker definidos en
+            <code class="bg-slate-200 px-1 rounded">docker-compose.yml</code>,
+            uno por uno.
+        </p>
+
+        <!--
+            Este div hace el "polling": al cargar la página (evento "load")
+            y luego cada 5 segundos, le pide el HTML actualizado a
+            /partials/services y reemplaza SU PROPIO contenido
+            (hx-target="this" + hx-swap="innerHTML").
+
+            Como el div en sí nunca se reemplaza a sí mismo (solo lo que hay
+            adentro), el hx-trigger="every 5s" sigue activo para siempre,
+            incluso después de que un botón Iniciar/Detener actualice este
+            mismo contenido.
+        -->
+        <div
+            id="services-root"
+            hx-get="/partials/services"
+            hx-trigger="load, every 5s"
+            hx-target="this"
+            hx-swap="innerHTML"
+        >
+            {% include "_services.html" %}
+        </div>
+    </main>
+</body>
+</html>
