@@ -1,0 +1,6 @@
+# Local environment variables
+.env
+
+# Local Docker volume data (if ever bind-mounted instead of named volumes)
+volumes/
+data/
